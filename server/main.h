@@ -1,0 +1,11 @@
+#ifndef __MAIN_H__
+#define __MAIN_H__
+
+int ginit();
+void gdestroy();
+void gstart();
+void Getconfig();
+void addfd(int epollfd, int fd, int flag);
+void *listener(void *arg);
+
+#endif

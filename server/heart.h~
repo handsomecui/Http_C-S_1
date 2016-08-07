@@ -1,0 +1,31 @@
+#ifndef __HEART_H__
+#define __HEART_H__
+
+typedef short HEART;
+typedef struct session{
+
+	char peerip[16];
+	char name[16];
+
+	int sockfd;
+
+	int count;
+
+	struct session *next;
+
+}s_t;
+
+int conn_init();
+void conn_finish();
+void conn_timeout();
+void conn_error();
+
+void init_shead();
+
+void heart_handler(int sockfd,DATA_PACK *pd);
+
+void *heart_check(void *p);
+
+void check_handler();
+
+#endif

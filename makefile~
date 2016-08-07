@@ -1,0 +1,10 @@
+#This is the makefile of EpollTest
+
+.PHONY:all
+all:clean server client
+server:
+	gcc -I include src/server/*.c -o bin/server -lpthread
+client:
+	gcc -I include src/client/*.c -o bin/client -lpthread
+clean:
+	rm -f bin/server bin/client

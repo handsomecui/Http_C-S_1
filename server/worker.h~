@@ -1,0 +1,8 @@
+#ifndef __WORK_H__
+#define __WORK_H__
+
+void* worker(void *arg);
+void winit();
+void wfinish();
+
+#endif

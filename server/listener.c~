@@ -1,0 +1,22 @@
+#include "listener.h"
+#include "common.h"
+
+void *listen(void *arg){
+	int ret, i;
+	int connfd;
+	struct sockaddr_in client_address;
+	socklen_t client_addresslen = sizeof(client_address);
+	while(1){
+		ret = epoll_wait(lis_epollfd, lis_events, MAX_SOCKET_NUMBERS, -1);
+		show_err(ret < 0, "epoll等候失败\r\n");
+		for(i = 0; i < ret; i++){
+			if(lis_events[i].data.fd == listenfd){
+				connfd = accept(listenfd, (struct sockaddr*)&client_address, &client_addresslen);
+				addfd(conn_epollfd, connfd, 1);
+			}
+			else{
+				printf("do other things\n");
+			}
+		}
+	}
+}

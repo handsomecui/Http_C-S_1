@@ -1,0 +1,17 @@
+#ifndef __LINKPOOL_H__
+#define __LINKPOOL_H__
+#define BUF_SIZE 1024;
+#include <time.h>
+typedef struct Link{
+	int connfd;
+	time_t last_linktime;
+}Link;
+
+int conn_init();
+void conn_finish();
+void* conn_timeout(void* arg);
+void conn_error();
+int conn_add(int connfd);
+void conn_update(int connfd);
+
+#endif

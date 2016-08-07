@@ -1,0 +1,69 @@
+#include "common.h"
+#include "log.h"
+#define LOG_PATH "log/log"
+extern int MAXLOGLEN;
+
+char* itoa(int num){
+	char *s = (char *)malloc(10);
+	int i = 0, j;
+	char c;
+	while(num){
+		s[i++] = num%10 + '0';
+		num /= 10;
+	}
+	s[i] = '\0';
+	for(j = 0; j < i; j++){
+		c = s[j];
+		i--;
+		s[j] = s[i];
+		s[i] = c;
+	}
+	return s;
+}
+void WriteSysLog(const char *s){
+	char buf[1024];
+	char logname[20];
+	time_t timep; 
+	int fp;
+	struct tm *p;
+	time(&timep); 
+	p = localtime(&timep); 
+	memset(buf,0,sizeof(buf));
+	sprintf(buf,"%d-%d-%d %d:%d:%d : ",(1900+p->tm_year),(1+p->tm_mon),\
+	p->tm_mday,p->tm_hour, p->tm_min, p->tm_sec); 
+	strcat(buf, s);
+	fp = open(LOG_PATH, O_RDONLY|O_CREAT|O_WRONLY, 0644);
+	if(fp < 0)
+	{
+		 fprintf(stderr, "open file 1 error: %s\n", strerror(errno));
+	}
+	else
+	{
+	 	 off_t n = lseek(fp, 0, SEEK_END);
+	 	 if(n >= MAXLOGLEN)
+	 	 {
+			close(fp);
+			int i;
+	 		for(i = 1; i < 100; i++){
+				sprintf(logname, "%s", LOG_PATH);
+				strcat(logname, itoa(i));
+				fp = open(logname,O_RDONLY|O_CREAT|O_WRONLY, 0644);
+				n = lseek(fp, 0, SEEK_END);
+				if(n >= MAXLOGLEN){
+					close(fp);
+					continue;				
+				}
+				else{
+					write(fp, buf, strlen(buf));
+					close(fp);
+					return;
+				}
+			}
+	  	}
+	 	 else
+	  	{
+			write(fp, buf, strlen(buf));
+			close(fp);
+	  	}
+	 }
+}

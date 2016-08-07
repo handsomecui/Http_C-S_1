@@ -1,0 +1,18 @@
+#include "common.h"
+#include "work.h"
+
+struct threadpool *workpool;
+void* worker(void *arg){
+	
+	while(1){
+		
+	}
+}
+
+void winit(){
+	workpool = threadpool_init(10, 20);
+}
+
+void wfinish(){
+	threadpool_destroy(pool);
+}
