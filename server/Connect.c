@@ -35,7 +35,9 @@ void *receive_data(void *arg){
 	int recvnum = 0;
 	buf[recvnum] = '\0';
 	while(1){
+		pthread_mutex_lock(&(pool->mutex));
 		ret = recv(connfd, buf + recvnum, MAX_LEN, 0);
+		pthread_mutex_unlock(&(pool->mutex));
 
 		if(ret < 0){
 			if((errno == EAGAIN) || (errno == EWOULDBLOCK)){

@@ -105,11 +105,11 @@ void* threadpool_function(void* arg){
 			pthread_cond_broadcast(&(pool->queue_not_full));
 		}
 		
+		pthread_mutex_unlock(&(pool->mutex));
 		(*(pjob->callback_function))(pjob->arg);
 		
 		free(pjob);
 		pjob = NULL;
-		pthread_mutex_unlock(&(pool->mutex));
 	}
 }
 

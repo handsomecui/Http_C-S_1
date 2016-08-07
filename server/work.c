@@ -1,9 +1,11 @@
 #include "common.h"
 #include "work.h"
+#include "threadpool.h"
 #include<dirent.h>
 #define MAXLEN 1024000
 char *path;
 char *sendbuf;
+extern struct threadpool *pool;
 void *work(void *arg){
 	//puts("***");
 	winit();
@@ -12,13 +14,16 @@ void *work(void *arg){
 	//printf("fd %d: %s\n", connfd, buf);
 	getpath(buf);
 	int fd, nbyte;
-	if((fd = open(path, O_RDONLY)) < 0){
-		printf("fail to open %s\n", buf + 1);
+	if((fd = open(path, O_RDONLY | O_APPEND)) < 0){
+		printf("fail to open %s\n", path);
 		return NULL;
 	}
+	
+	pthread_mutex_lock(&(pool->mutex));
 	while((nbyte = read(fd, buf, MAXLEN)) > 0){
 		send(connfd, buf, nbyte, 0);
 	}
+	pthread_mutex_unlock(&(pool->mutex));
 	close(connfd);
 	close(fd);
 	wfinish();
