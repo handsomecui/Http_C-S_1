@@ -34,7 +34,7 @@ int link_add(int connfd){
 	Link *newLink = new Link;
 	newLink->connfd = connfd;
 	newLink->last_linktime = time(NULL);
-	printf("add connfd %d\n ", connfd);
+	//printf("add connfd %d\n ", connfd);
 	connpool.insert(make_pair(connfd, newLink));
 	return 1;
 }

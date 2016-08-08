@@ -41,7 +41,7 @@ void *receive_data(void *arg){
 
 		if(ret < 0){
 			if((errno == EAGAIN) || (errno == EWOULDBLOCK)){
-				printf("read later \r\n");
+				//printf("read later \r\n");
 			}
 		    	break;
 		}
@@ -56,6 +56,11 @@ void *receive_data(void *arg){
 			buf[recvnum] = '\0';
 		}
 	}
+	if(!check_complete(buf)){
+		close(connfd);
+		epoll_ctl(conn_epollfd, EPOLL_CTL_DEL, ent->data.fd, NULL);
+		return NULL;
+	}
 	//puts(buf);
 	//printf("receive_data : connfd = %d buf = %s\n", ent->data.fd, buf);
 	wjob warg;
@@ -64,6 +69,19 @@ void *receive_data(void *arg){
 	(*(work))((void *)&warg);
 	close(connfd);
 	epoll_ctl(conn_epollfd, EPOLL_CTL_DEL, ent->data.fd, NULL);
+}
+
+int check_complete(const char *buf){
+	int len = strlen(buf);
+	const char *method = strstr(buf, "GET");
+	if(method && len > 74){
+		return 1;
+	}
+	else{
+		printf("request is invalid\n");
+		return 0;
+	}
+
 }
 
 int conn_init(){
