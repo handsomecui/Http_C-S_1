@@ -68,7 +68,7 @@ void *receive_data(void *arg){
 
 int conn_init(){
 	buf = (char *)malloc(MAX_LEN);
-	pool = threadpool_init(10, 20);
+	pool = threadpool_init(6, 20);
 }
 void conn_finish(){
 	free(buf);
