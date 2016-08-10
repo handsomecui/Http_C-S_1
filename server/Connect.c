@@ -16,7 +16,7 @@ void *Connect(void *arg){
 	conn_init();
 	int ret, i;
 	while(1){
-		ret = epoll_wait(conn_epollfd, conn_events, MAX_SOCKET_NUMBERS, -1);
+		ret = epoll_wait(conn_epollfd, conn_events, MAX_SOCKET_NUMBERS, 10);
 		show_err(ret < 0, "work_epoll等候失败\r\n");
 		for(i = 0; i < ret; i++){
 			if(conn_events[i].events & EPOLLIN){
@@ -59,7 +59,7 @@ void *receive_data(void *arg){
 	}
 	if(!check_complete(buf)){
 		close(connfd);
-		epoll_ctl(conn_epollfd, EPOLL_CTL_DEL, ent->data.fd, NULL);
+		epoll_ctl(conn_epollfd, EPOLL_CTL_MOD, ent->data.fd, ent);
 		return NULL;
 	}
 	//puts(buf);
@@ -69,7 +69,7 @@ void *receive_data(void *arg){
 	warg.buf = buf;
 	(*(work))((void *)&warg);
 	close(connfd);
-	epoll_ctl(conn_epollfd, EPOLL_CTL_DEL, ent->data.fd, NULL);
+	epoll_ctl(conn_epollfd, EPOLL_CTL_MOD, ent->data.fd, ent);
 }
 
 int check_complete(const char *buf){

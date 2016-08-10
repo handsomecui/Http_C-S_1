@@ -22,7 +22,7 @@ void *work(void *arg){
 	
 	//pthread_mutex_lock(&(pool->mutex));
 	while((nbyte = read(fd, buf, MAXLEN)) > 0){
-		send(connfd, buf, nbyte, MSG_NOSIGNAL);
+		send(connfd, buf, nbyte,0);
 	}
 	//pthread_mutex_unlock(&(pool->mutex));
 	close(connfd);

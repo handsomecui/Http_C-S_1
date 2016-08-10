@@ -35,6 +35,11 @@ void gstart(){
 	
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	show_err(listenfd < 0, "create socket error!");
+	int on = 1;
+	if(setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, (socklen_t)sizeof(on)) < 0)
+	{
+		perror("set error");
+	}
 	int ret = bind(listenfd, (struct sockaddr *)&address, sizeof(address));
 	show_err(ret == -1, "bind error!");
 	ret = listen(listenfd, 5);
