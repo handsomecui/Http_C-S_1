@@ -27,7 +27,10 @@ void* link_timeout(void* arg){
 		}
 	}
 }
-void link_error(){
+void link_delete(int connfd){
+	delete(connpool[connfd]);
+	connpool.erase(connfd);
+	close(connfd);
 	return;
 }
 int link_add(int connfd){
@@ -42,4 +45,7 @@ void link_update(int connfd){
 	connpool[connfd]->last_linktime = time(NULL);
 }
 
+Link* getlink(int connfd){
+	return connpool[connfd];
+}
 

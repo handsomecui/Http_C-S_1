@@ -5,7 +5,7 @@
 #include "linkpool.h"
 #include "mAtomic.h"
 #include <dlfcn.h>
-#define MAX_LEN 1024000
+#define MAX_LEN 1024
 
 struct threadpool *pool;
 char *buf;
@@ -22,6 +22,9 @@ void *Connect(void *arg){
 			if(conn_events[i].events & EPOLLIN){
 				threadpool_add_job(pool, receive_data, (void *)&conn_events[i]);
 			}
+			else if(conn_events[i].events & EPOLLOUT){
+				threadpool_add_job(pool, send_data, (void *)&conn_events[i]);
+			}
 			else
 				printf("Connect do other things!\n");
 		}
@@ -34,10 +37,10 @@ void *receive_data(void *arg){
 	int connfd = (ent->data).fd;
 	int ret;
 	int recvnum = 0;
-	buf[recvnum] = '\0';
+	Link *iolink = getlink(connfd);
 	while(1){
 		//pthread_mutex_lock(&(pool->mutex));
-		ret = recv(connfd, buf + recvnum, MAX_LEN, MSG_NOSIGNAL);
+		ret = recv(connfd, iolink->recvbuf + recvnum, MAX_LEN, MSG_NOSIGNAL);
 		//pthread_mutex_unlock(&(pool->mutex));
 
 		if(ret < 0){
@@ -57,19 +60,33 @@ void *receive_data(void *arg){
 			buf[recvnum] = '\0';
 		}
 	}
-	if(!check_complete(buf)){
-		close(connfd);
+
+	printf("recv_data %d: %s\n", connfd, iolink->recvbuf);
+	if(!check_complete(iolink->recvbuf)){
+		link_delete(connfd);
 		epoll_ctl(conn_epollfd, EPOLL_CTL_MOD, ent->data.fd, ent);
 		return NULL;
 	}
+	
 	//puts(buf);
-	//printf("receive_data : connfd = %d buf = %s\n", ent->data.fd, buf);
+	
+	ent->events = EPOLLET | EPOLLOUT;
+	epoll_ctl(conn_epollfd, EPOLL_CTL_MOD, ent->data.fd, ent);
+}
+
+void *send_data(void * arg){
+	struct epoll_event *ent = (struct epoll_event *)arg;
+	ent->events = EPOLLIN | EPOLLET;
+	int connfd = (ent->data).fd;
+	
+	Link *iolink = getlink(connfd);
+	epoll_ctl(conn_epollfd, EPOLL_CTL_MOD, ent->data.fd, ent);
 	wjob warg;
 	warg.fd = connfd;
-	warg.buf = buf;
+	warg.buf = iolink->recvbuf;
+	printf("send_data %d: %s\n", connfd, warg.buf);
 	(*(work))((void *)&warg);
-	close(connfd);
-	epoll_ctl(conn_epollfd, EPOLL_CTL_MOD, ent->data.fd, ent);
+	link_delete(connfd);
 }
 
 int check_complete(const char *buf){
