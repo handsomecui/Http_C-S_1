@@ -17,6 +17,10 @@ struct threadpool* threadpool_init(int thread_num, int queue_max_num){
 			printf("fail to init mutex!\n");
 			break;
 		}
+		if(pthread_mutex_init(&(pool->conn_mutex), NULL)){
+			printf("fail to init mutex!\n");
+			break;
+		}
 		if(pthread_cond_init(&(pool->queue_not_empty), NULL)){
 			printf("fail to init queue_not_empty!\n");
 			break;
@@ -104,12 +108,15 @@ void* threadpool_function(void* arg){
 		if(pool->queue_cur_num == pool->queue_max_num - 1){
 			pthread_cond_broadcast(&(pool->queue_not_full));
 		}
+		if(pjob != NULL){
+
+			(*(pjob->callback_function))(pjob->arg);
 		
+			free(pjob);
+			pjob = NULL;
+		}
+		else printf("threadpool function error!\n");
 		pthread_mutex_unlock(&(pool->mutex));
-		(*(pjob->callback_function))(pjob->arg);
-		
-		free(pjob);
-		pjob = NULL;
 	}
 }
 

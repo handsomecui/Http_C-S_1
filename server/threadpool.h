@@ -19,6 +19,7 @@ struct threadpool{
 	struct job *tail;
 	pthread_t *pthreads;
 	pthread_mutex_t mutex;
+	pthread_mutex_t conn_mutex;
 	pthread_cond_t queue_empty;
 	pthread_cond_t queue_not_empty;
 	pthread_cond_t queue_not_full;

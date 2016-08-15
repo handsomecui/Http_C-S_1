@@ -3,7 +3,7 @@
 #include "log.h"
 #include "Connect.h"
 #include "linkpool.h"
-
+#include "threadpool.h"
 #define CONFIG_PATH "Config.ini"
 
 char Sip[16];
@@ -15,16 +15,17 @@ int listenfd, lis_epollfd, conn_epollfd;
 struct epoll_event lis_events[MAX_SOCKET_NUMBERS], conn_events[MAX_SOCKET_NUMBERS];
 pthread_t conn_pid, lis_pid, link_pid;
 
+struct threadpool *pool;
 
 int main(){
 	ginit();
 	gstart();
 	link_init();
 	pthread_join(lis_pid, NULL);
-	pthread_join(conn_pid, NULL);
-	pthread_join(link_pid, NULL);
-	link_finish();
+	//pthread_join(conn_pid, NULL);
+	//pthread_join(link_pid, NULL);
 	gdestroy();
+	link_finish();
 }
 
 void gstart(){
@@ -49,22 +50,25 @@ void gstart(){
 	addfd(lis_epollfd, listenfd, 1);
 	conn_epollfd = epoll_create(5);
 	show_err(conn_epollfd == -1, "create connect epoll error!");
-	
+	for(int i = 0; i < 1; i++){
+		threadpool_add_job(pool, Connect, NULL);
+	}
 	ret = pthread_create(&lis_pid, NULL, listener, NULL);
 	show_err(ret != 0, "create listen pthread error!");
-	ret = pthread_create(&conn_pid, NULL, Connect, NULL);
-	show_err(ret != 0, "create connect pthread error!");
-	ret = pthread_create(&link_pid, NULL, link_timeout, NULL);
-	show_err(ret != 0, "create connect pthread error!");
+	//ret = pthread_create(&conn_pid, NULL, Connect, NULL);
+	//show_err(ret != 0, "create connect pthread error!");
+	//ret = pthread_create(&link_pid, NULL, link_timeout, NULL);
+	//show_err(ret != 0, "create connect pthread error!");
 }
 
 
 int ginit(){
 	Getconfig();	
+	pool = threadpool_init(6, 20);
 }
 
 void gdestroy(){
-
+	threadpool_destroy(pool);
 }
 
 void *listener(void *arg){
@@ -73,17 +77,18 @@ void *listener(void *arg){
 	struct sockaddr_in client_address;
 	socklen_t client_addresslen = sizeof(client_address);
 	while(1){
-		ret = epoll_wait(lis_epollfd, lis_events, MAX_SOCKET_NUMBERS, -1);
+		//printf("before wait\n");
+		ret = epoll_wait(lis_epollfd, lis_events, MAX_SOCKET_NUMBERS, 10);
+		//printf("lis ret = %d\n", ret);
 		show_err(ret < 0, "lis_epoll等候失败\r\n");
-		for(i = 0; i < ret; i++){
-			if(lis_events[i].data.fd == listenfd){
+		for(;ret;){
+			//	pthread_mutex_lock(&(pool->conn_mutex));
 				connfd = accept(listenfd, (struct sockaddr*)&client_address, &client_addresslen);
-				link_add(connfd);
+			//	pthread_mutex_unlock(&(pool->conn_mutex));
+				if(connfd < 0)
+					break;
+				//link_add(connfd);
 				addfd(conn_epollfd, connfd, 1);
-			}
-			else{
-				printf("do other things\n");
-			}
 		}
 	}
 }
@@ -118,7 +123,7 @@ void Getconfig(){
 
 void addfd(int epollfd, int fd, int flag){
 	struct epoll_event event;
-	memset(&event, 0x00, sizeof(event));
+	//memset(&event, 0x00, sizeof(event));
 	event.data.fd = fd;
 	event.events = EPOLLIN;
 	if(flag){

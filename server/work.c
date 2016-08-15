@@ -3,7 +3,7 @@
 #include "work.h"
 #include "threadpool.h"
 #include<dirent.h>
-#define MAXLEN 1024000
+#define MAXLEN 1024
 char *path;
 char *sendbuf;
 extern struct threadpool *pool;
@@ -15,6 +15,9 @@ void *work(void *arg){
 	//printf("fd %d: %s\n", connfd, buf);
 	getpath(buf);
 	int fd, nbyte;
+	//strcpy(sendbuf, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nconnection: keep-alive\r\n\r\n\0");
+	strcpy(sendbuf, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\0");
+	
 	if((fd = open(path, O_RDONLY | O_APPEND)) < 0){
 		printf("fail to open %s\n", path);
 		return NULL;
@@ -22,11 +25,18 @@ void *work(void *arg){
 	
 	//pthread_mutex_lock(&(pool->mutex));
 	while((nbyte = read(fd, buf, MAXLEN)) > 0){
-		send(connfd, buf, nbyte, MSG_NOSIGNAL);
+		//send(connfd, buf, nbyte, 0);
+		strcat(sendbuf, buf);
 	}
+	if(send(connfd, sendbuf, strlen(sendbuf),MSG_NOSIGNAL) < 0){
+		perror("send data error!");
+		
+	}
+	puts(sendbuf);
 	//pthread_mutex_unlock(&(pool->mutex));
 	close(fd);
 	wfinish();
+	printf("work finish ! \n");
 }
 
 
