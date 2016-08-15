@@ -15,18 +15,20 @@ void *work(void *arg){
 	//printf("fd %d: %s\n", connfd, buf);
 	getpath(buf);
 	int fd, nbyte;
-	//strcpy(sendbuf, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nconnection: keep-alive\r\n\r\n\0");
-	strcpy(sendbuf, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\0");
+	strcpy(sendbuf, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nconnection: keep-alive\r\n\r\n\0");
+	//strcpy(sendbuf, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\0");
 	
 	if((fd = open(path, O_RDONLY | O_APPEND)) < 0){
 		printf("fail to open %s\n", path);
+		close(fd);
+		wfinish();
 		return NULL;
 	}
 	
 	//pthread_mutex_lock(&(pool->mutex));
 	while((nbyte = read(fd, buf, MAXLEN)) > 0){
 		//send(connfd, buf, nbyte, 0);
-		strcat(sendbuf, buf);
+		strncat(sendbuf, buf, nbyte);
 	}
 	if(send(connfd, sendbuf, strlen(sendbuf),MSG_NOSIGNAL) < 0){
 		perror("send data error!");
